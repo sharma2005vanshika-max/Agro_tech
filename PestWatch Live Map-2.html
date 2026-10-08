@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PestWatch Live Map</title>
+<link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600;800&family=Fraunces:wght@600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f3efe4;--card:#fffdf6;--ink:#26301f;--mute:#6b7260;--line:#d9d2bd;--g:#3f7d3a;--o:#e08a1e;--r:#c43a2b;--acc:#2f5d2b;--accink:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#171c14;--card:#202719;--ink:#ecebdc;--mute:#9aa38c;--line:#38422f;--acc:#8cc86a;--accink:#14200f}}
+:root[data-theme="dark"]{--bg:#171c14;--card:#202719;--ink:#ecebdc;--mute:#9aa38c;--line:#38422f;--acc:#8cc86a;--accink:#14200f}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Mukta,"Noto Sans Devanagari",system-ui,sans-serif;font-size:16px;line-height:1.5}
+h1,h2,h3{font-family:Fraunces,Georgia,serif;margin:0 0 .4em;line-height:1.15}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:14px 20px;border-bottom:2px solid var(--ink)}
+header h1{font-size:1.5rem;margin:0;flex:1}
+.tabs{display:flex;gap:4px;background:var(--line);padding:3px;border-radius:999px}
+.tabs button{border:0;background:none;color:var(--ink);font:inherit;font-weight:600;padding:6px 16px;border-radius:999px;cursor:pointer}
+.tabs button.on{background:var(--acc);color:var(--accink)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--o);outline-offset:2px}
+main{max-width:1100px;margin:0 auto;padding:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+.btn{border:0;background:var(--acc);color:var(--accink);font:inherit;font-weight:800;padding:12px 18px;border-radius:8px;cursor:pointer}
+.btn.big{width:100%;font-size:1.25rem;padding:18px}.btn.alt{background:none;color:var(--ink);border:2px solid var(--ink)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+label{display:block;font-weight:600;margin:10px 0 4px}
+select,input[type=text]{width:100%;font:inherit;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
+.row{display:grid;gap:16px}@media(min-width:800px){.two{grid-template-columns:1fr 1fr}.dash{grid-template-columns:1.6fr 1fr}}
+.photos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.slot{aspect-ratio:1;border:2px dashed var(--line);border-radius:8px;display:grid;place-items:center;text-align:center;font-size:.8rem;color:var(--mute);cursor:pointer;background-size:cover;background-position:center;position:relative}
+.slot.has{border-style:solid;border-color:var(--g);color:transparent}
+.slot input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.pill{display:inline-block;padding:2px 10px;border-radius:999px;font-weight:800;font-size:.85rem;color:#fff}
+.High,.pH{background:var(--g)}.Medium,.pM{background:var(--o)}.Low,.pL{background:var(--r)}
+.r-High{background:var(--r)}.r-Medium{background:var(--o)}.r-Low{background:var(--g)}
+.muted{color:var(--mute);font-size:.9rem}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px}.stat b{font-family:Fraunces,serif;font-size:1.8rem;display:block}
+svg text{font-family:Mukta,sans-serif}
+.rep{border-top:1px solid var(--line);padding:10px 0}.rep:first-child{border:0}
+.badge{display:inline-flex;gap:6px;align-items:center;border:2px solid var(--line);border-radius:8px;padding:6px 10px;margin:0 6px 6px 0;font-weight:600;opacity:.45}.badge.on{opacity:1;border-color:var(--o)}
+.alert{border-left:6px solid var(--o);padding:10px 14px;background:var(--card);border-radius:0 8px 8px 0;margin-bottom:10px}
+.hide{display:none}.farmer{max-width:520px;margin:0 auto}
+.tb{display:flex;gap:6px;margin-bottom:14px}.tb button{flex:1}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:8px;font-weight:600;z-index:9}
+.legend span{display:inline-block;width:12px;height:12px;border-radius:50%;margin:0 4px 0 12px;vertical-align:middle}
+</style></head><body>
+<header><h1>PestWatch Live Map</h1>
+<label style="margin:0;display:flex;gap:6px;align-items:center" for="lang">🌐 <select id="lang" style="width:auto;padding:6px"><option value="hi">हिन्दी</option><option value="en">English</option><option value="mr">मराठी</option></select></label>
+<div class="tabs" role="tablist"><button id="tF" class="on">Farmer · किसान</button><button id="tO">Officer dashboard</button></div></header>
+<main>
+<section id="vF" class="farmer">
+ <div class="tb"><button class="btn" data-f="rep">📷 रिपोर्ट</button><button class="btn alt" data-f="alr">🔔 अलर्ट</button><button class="btn alt" data-f="pro">⭐ प्रोफ़ाइल</button></div>
+ <div id="fRep"></div><div id="fAlr" class="hide"></div><div id="fPro" class="hide"></div>
+</section>
+<section id="vO" class="hide">
+ <div class="stats" id="stats"></div>
+ <div class="row dash">
+  <div class="card"><div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:8px">
+   <h2 style="margin:0;flex:1">Village risk map</h2>
+   <select id="dis" style="width:auto" aria-label="Disease filter"></select>
+   <label style="margin:0;font-weight:400"><input type="checkbox" id="fc"> Weather forecast layer</label></div>
+   <svg id="map" viewBox="0 0 600 400" width="100%" role="img" aria-label="Village risk map"></svg>
+   <div class="legend muted"><span class="r-Low"></span>Low<span class="r-Medium"></span>Medium<span class="r-High"></span>High<span style="border:2px dashed var(--r);background:none"></span>Hotspot</div></div>
+  <div class="card" id="side"></div>
+ </div>
+</section>
+</main>
+<script>
+const $=s=>document.querySelector(s);
+const V=[{id:1,n:'Rampur',h:'रामपुर',x:130,y:110,hum:86,t:24,rain:1},{id:2,n:'Sarai Khas',h:'सराय खास',x:290,y:80,hum:82,t:26,rain:1},{id:3,n:'Bhikharipur',h:'भिखारीपुर',x:450,y:120,hum:60,t:31,rain:0},
+{id:4,n:'Madhopur',h:'माधोपुर',x:90,y:270,hum:70,t:27,rain:0},{id:5,n:'Kakori',h:'काकोरी',x:240,y:230,hum:84,t:23,rain:1},{id:6,n:'Nawabganj',h:'नवाबगंज',x:400,y:280,hum:55,t:33,rain:0},{id:7,n:'Dhaurahra',h:'धौरहरा',x:530,y:300,hum:78,t:25,rain:0},{id:8,n:'Itaunja',h:'इटौंजा',x:250,y:350,hum:65,t:29,rain:0}];
+const C={wheat:{d:'Yellow Rust'},tomato:{d:'Early Blight'},rice:{d:'Leaf Blast'},potato:{d:'Late Blight'}};
+const stages=['बुवाई (Sowing)','वानस्पतिक (Vegetative)','फूल (Flowering)','फल/दाना (Fruiting)'];
+const cat=s=>s>=70?'High':s>=30?'Medium':'Low';
+const cc=c=>c>80?'High':c>=50?'Medium':'Low';
+let R=[],me={vid:1,pts:0,list:[]},nid=1;
+function seed(){const a=[[1,'Yellow Rust','wheat',90,1,'u2'],[1,'Yellow Rust','wheat',85,2,'u3'],[1,'Yellow Rust','wheat',78,2,'u4'],[1,'Yellow Rust','wheat',92,3,'u5'],[2,'Early Blight','tomato',88,1,'u6'],[2,'Early Blight','tomato',70,2,'u7'],[5,'Late Blight','potato',82,1,'u8'],[5,'Late Blight','potato',91,1,'u9'],[5,'Late Blight','potato',66,3,'u10'],[5,'Late Blight','potato',75,4,'u11'],[4,'Leaf Blast','rice',55,2,'u12'],[7,'Leaf Blast','rice',48,1,'u13'],[3,'Early Blight','tomato',40,5,'u14'],[6,'Yellow Rust','wheat',60,6,'u15']];
+a.forEach(([v,d,c,cf,days,u])=>R.push({id:nid++,uid:u,vid:v,crop:c,stage:stages[1],dis:d,conf:cf,days,st:'pending',label:null}))}
+seed();
+const eff=r=>r.label||r.dis;
+function risk(vid,d){let s=0;R.filter(r=>r.vid==vid&&r.days<=7&&r.st!='rejected'&&(!d||eff(r)==d)).forEach(r=>{s+=({High:1,Medium:.5,Low:.2})[cc(r.conf)]*(r.st=='verified'?1.5:1)});return Math.min(100,Math.round(s*20))}
+function topDis(vid){const m={};R.filter(r=>r.vid==vid&&r.days<=7&&r.st!='rejected').forEach(r=>m[eff(r)]=(m[eff(r)]||0)+1);return Object.entries(m).sort((a,b)=>b[1]-a[1])[0]?.[0]}
+function fcRisk(v){const h=v.hum>80&&v.t>=20&&v.t<=28;return Math.round((v.hum-50)*1.1+(h?25:0)+v.rain*10)}
+function hot(d){const o=[];V.forEach(v=>{const rs=R.filter(r=>r.vid==v.id&&r.days<=5&&r.st!='rejected'&&(!d||eff(r)==d));const m={};rs.forEach(r=>(m[eff(r)]=m[eff(r)]||[]).push(r));for(const k in m)if(m[k].length>=3&&m[k].reduce((a,r)=>a+r.conf,0)/m[k].length>=70)o.push({v,d:k,n:m[k].length})});return o}
+function toast(t){const e=document.createElement('div');e.className='toast';e.textContent=t;document.body.appendChild(e);setTimeout(()=>e.remove(),2600)}
+function say(t){try{const u=new SpeechSynthesisUtterance(t);u.lang='hi-IN';speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){toast('Voice not supported on this device')}}
+/* ---------- Farmer ---------- */
+const T={
+hi:{vc:'hi-IN',title:'अपनी फसल की फोटो भेजें',sub:'2–3 फोटो भेजें: पूरा पौधा, प्रभावित हिस्सा, पास से फोटो।',crop:'फसल',stage:'अवस्था',vil:'गाँव (GPS न चले तो चुनें)',ph:'फोटो',p:['पूरा पौधा','प्रभावित हिस्सा','पास से फोटो'],loc:'📍 जमा करने पर लोकेशन ली जाएगी',go:'जाँच करें',ok:'फसल स्वस्थ दिख रही है',okb:'कोई बीमारी नहीं मिली। नियमित निगरानी रखें।',rev:'विशेषज्ञ समीक्षा करेंगे; तब तक साफ़-सफ़ाई रखें।',early:'आपके गाँव से जल्दी रिपोर्ट के लिए!',pts:'अंक',hear:'🔊 सुनें',nw:'नई रिपोर्ट',tr:'📷 रिपोर्ट',ta:'🔔 अलर्ट',tp:'⭐ प्रोफ़ाइल',al:'के अलर्ट',up:'का खतरा बढ़ रहा है',hi_:'का खतरा ज़्यादा है',wx:'मौसम चेतावनी',none:'अभी कोई ख़तरा नहीं। फोटो भेजते रहें।',mypts:'आपके अंक',conf:'विशेषज्ञ से पुष्टि',top:'टॉप स्काउट',novoice:'इस फ़ोन पर आवाज़ उपलब्ध नहीं',
+stages:['बुवाई','वानस्पतिक','फूल','फल/दाना'],b:['पहली रिपोर्ट','अर्ली स्काउट (10 रिपोर्ट)','विलेज गार्डियन (3 पुष्टि)'],
+wxb:(h,t)=>`अगले कुछ दिनों में नमी (${h}%) और तापमान (${t}°C) रोग के अनुकूल हैं। अभी से रोकथाम शुरू करें।`,
+vr:(v,d)=>`आपके गाँव ${v} में ${d} का खतरा बढ़ रहा है। अभी रोकथाम के कदम उठाएँ।`,vw:'अगले सप्ताह आपके क्षेत्र का मौसम फफूंद रोगों के अनुकूल है। अभी से रोकथाम शुरू करें।',vc2:(d,t)=>`आपके गाँव में ${d} का खतरा बढ़ रहा है। ${t}`},
+en:{vc:'en-IN',title:'Send photos of your crop',sub:'Send 2–3 photos: whole plant, affected area, close-up.',crop:'Crop',stage:'Growth stage',vil:'Village (pick if GPS is off)',ph:'Photos',p:['Whole plant','Affected part','Close-up'],loc:'📍 Location is captured when you submit',go:'Analyse',ok:'Your crop looks healthy',okb:'No disease found. Keep checking regularly.',rev:'An expert will review this. Until then, keep the field clean.',early:'for an early report from your village!',pts:'points',hear:'🔊 Listen',nw:'New report',tr:'📷 Report',ta:'🔔 Alerts',tp:'⭐ Profile',al:' alerts',up:' risk is rising',hi_:' risk is high',wx:'Weather warning',none:'No risk right now. Keep sending photos.',mypts:'Your points',conf:'confirmed by experts',top:'Top scouts',novoice:'Voice is not available on this phone',
+stages:['Sowing','Vegetative','Flowering','Fruiting'],b:['First Report','Early Scout (10 reports)','Village Guardian (3 confirmed)'],
+wxb:(h,t)=>`Humidity (${h}%) and temperature (${t}°C) are favourable for disease in the coming days. Start prevention now.`,
+vr:(v,d)=>`${d} risk is rising in ${v}. Take preventive steps now.`,vw:'Weather next week is favourable for fungal disease in your area. Start prevention now.',vc2:(d,t)=>`${d} risk is rising in your village. ${t}`},
+mr:{vc:'mr-IN',title:'आपल्या पिकाचे फोटो पाठवा',sub:'2–3 फोटो पाठवा: संपूर्ण झाड, बाधित भाग, जवळून फोटो.',crop:'पीक',stage:'वाढीची अवस्था',vil:'गाव (GPS नसेल तर निवडा)',ph:'फोटो',p:['संपूर्ण झाड','बाधित भाग','जवळून फोटो'],loc:'📍 सबमिट केल्यावर लोकेशन घेतले जाईल',go:'तपासा',ok:'पीक निरोगी दिसत आहे',okb:'कोणताही रोग आढळला नाही. नियमित निरीक्षण ठेवा.',rev:'तज्ज्ञ तपासणी करतील; तोपर्यंत स्वच्छता ठेवा.',early:'तुमच्या गावातून लवकर अहवाल दिल्याबद्दल!',pts:'गुण',hear:'🔊 ऐका',nw:'नवीन अहवाल',tr:'📷 अहवाल',ta:'🔔 सूचना',tp:'⭐ प्रोफाइल',al:' साठी सूचना',up:' चा धोका वाढत आहे',hi_:' चा धोका जास्त आहे',wx:'हवामान इशारा',none:'सध्या धोका नाही. फोटो पाठवत रहा.',mypts:'तुमचे गुण',conf:'तज्ज्ञांनी पुष्टी केली',top:'टॉप स्काउट',novoice:'या फोनवर आवाज उपलब्ध नाही',
+stages:['पेरणी','वाढीचा काळ','फुलोरा','फळ/दाणे'],b:['पहिला अहवाल','अर्ली स्काउट (10 अहवाल)','व्हिलेज गार्डियन (3 पुष्टी)'],
+wxb:(h,t)=>`पुढील काही दिवस आर्द्रता (${h}%) आणि तापमान (${t}°C) रोगासाठी अनुकूल आहे. आत्ताच प्रतिबंध सुरू करा.`,
+vr:(v,d)=>`${v} गावात ${d} चा धोका वाढत आहे. आत्ताच प्रतिबंधक उपाय करा.`,vw:'पुढील आठवड्यात तुमच्या भागातील हवामान बुरशीजन्य रोगांसाठी अनुकूल आहे. आत्ताच प्रतिबंध सुरू करा.',vc2:(d,t)=>`तुमच्या गावात ${d} चा धोका वाढत आहे. ${t}`}};
+const CN={wheat:{hi:'गेहूँ',en:'Wheat',mr:'गहू'},tomato:{hi:'टमाटर',en:'Tomato',mr:'टोमॅटो'},rice:{hi:'धान',en:'Rice',mr:'भात'},potato:{hi:'आलू',en:'Potato',mr:'बटाटा'}};
+const DNm={'Yellow Rust':{hi:'पीला रतुआ',en:'Yellow Rust',mr:'पिवळा तांबेरा'},'Early Blight':{hi:'अगेती झुलसा',en:'Early Blight',mr:'लवकर येणारा करपा'},'Leaf Blast':{hi:'झोंका रोग',en:'Leaf Blast',mr:'पानावरील करपा'},'Late Blight':{hi:'पछेती झुलसा',en:'Late Blight',mr:'उशिरा येणारा करपा'}};
+const TIP={wheat:{hi:'पत्तियों पर पीली धारियाँ दिखें तो प्रभावित पौधे हटाएँ और कृषि अधिकारी से सलाह लें।',en:'If you see yellow stripes on leaves, remove affected plants and consult your agriculture officer.',mr:'पानांवर पिवळ्या रेषा दिसल्यास बाधित झाडे काढा आणि कृषी अधिकाऱ्यांचा सल्ला घ्या.'},
+tomato:{hi:'नीचे की संक्रमित पत्तियाँ तोड़ें, पौधों के बीच हवा आने दें, पत्तियाँ गीली न करें।',en:'Remove infected lower leaves, keep air flowing between plants, and avoid wetting the leaves.',mr:'खालची बाधित पाने काढा, झाडांमध्ये हवा खेळती ठेवा, पाने ओली करू नका.'},
+rice:{hi:'खेत में अधिक नाइट्रोजन न डालें और पानी का निकास ठीक रखें।',en:'Avoid excess nitrogen and keep field drainage good.',mr:'जास्त नायट्रोजन देऊ नका आणि शेतात पाण्याचा निचरा नीट ठेवा.'},
+potato:{hi:'नमी वाले मौसम में निगरानी बढ़ाएँ, संक्रमित पौधे खेत से बाहर करें।',en:'Scout more often in humid weather and remove infected plants from the field.',mr:'दमट हवामानात निरीक्षण वाढवा आणि बाधित झाडे शेताबाहेर काढा.'}};
+let lang='hi';try{lang=localStorage.getItem('pw_lang')||'hi'}catch(e){}
+const t=k=>T[lang][k],vn=v=>lang=='en'?v.n:v.h,dn=d=>(DNm[d]||{})[lang]||d;
+let draft={crop:'wheat',stage:0,vid:1,imgs:[null,null,null]},result=null;
+function fRep(){
+$('#fRep').innerHTML=result?resultHTML():`<div class="card"><h2>${t('title')}</h2><p class="muted">${t('sub')}</p>
+<label>${t('crop')}</label><select id="cr">${Object.keys(C).map(k=>`<option value="${k}" ${draft.crop==k?'selected':''}>${CN[k][lang]}</option>`).join('')}</select>
+<label>${t('stage')}</label><select id="st">${t('stages').map((s,i)=>`<option value="${i}" ${draft.stage==i?'selected':''}>${s}</option>`).join('')}</select>
+<label>${t('vil')}</label><select id="vi">${V.map(v=>`<option value="${v.id}" ${draft.vid==v.id?'selected':''}>${vn(v)}</option>`).join('')}</select>
+<label>${t('ph')}</label><div class="photos">${t('p').map((l,i)=>`<div class="slot ${draft.imgs[i]?'has':''}" style="${draft.imgs[i]?`background-image:url(${draft.imgs[i]})`:''}">${l}<input type="file" accept="image/*" capture="environment" data-i="${i}" aria-label="${l}"></div>`).join('')}</div>
+<p class="muted">${t('loc')}</p><button class="btn big" id="go" ${draft.imgs.filter(Boolean).length<2?'disabled':''}>${t('go')}</button></div>`;
+if(result)return;
+$('#cr').onchange=e=>draft.crop=e.target.value;$('#st').onchange=e=>draft.stage=+e.target.value;$('#vi').onchange=e=>draft.vid=+e.target.value;
+document.querySelectorAll('.slot input').forEach(i=>i.onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{draft.imgs[+i.dataset.i]=rd.result;fRep()};rd.readAsDataURL(f)});
+$('#go').onclick=()=>{try{navigator.geolocation.getCurrentPosition(()=>{},()=>{},{timeout:2000})}catch(e){}
+const healthy=Math.random()<.15,conf=Math.round(35+Math.random()*62),dis=healthy?'Healthy':C[draft.crop].d;
+const r={id:nid++,uid:'me',vid:draft.vid,crop:draft.crop,stage:draft.stage,dis,conf,days:0,st:healthy?'rejected':'pending',label:null};
+R.push(r);me.vid=draft.vid;const early=R.filter(x=>x.vid==r.vid&&x.dis==dis&&x.days<=7).length<=4;me.pts+=5+(early&&!healthy?5:0);me.list.push(r);result=r;fRep();fPro();fAlr()}}
+function resultHTML(){const r=result,k=cc(r.conf),h=r.dis=='Healthy';
+return `<div class="card"><h2>${h?t('ok'):dn(r.dis)}</h2><p><span class="pill ${k}">${r.conf}% · ${k}</span> <span class="muted">${r.dis}</span></p>
+<p>${h?t('okb'):TIP[r.crop][lang]}</p>${k=='Low'?`<p class="muted">${t('rev')}</p>`:''}
+<p><b>+${h?5:10} ${t('pts')}</b> ${h?'':t('early')}</p>
+<button class="btn" id="vo">${t('hear')}</button> <button class="btn alt" id="nw">${t('nw')}</button></div>`}
+function say(x){try{const u=new SpeechSynthesisUtterance(x);u.lang=t('vc');speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){toast(t('novoice'))}}
+document.addEventListener('click',e=>{if(e.target.id=='vo')say(T[lang].vc2(dn(result.dis),TIP[result.crop][lang]));
+if(e.target.id=='nw'){result=null;draft.imgs=[null,null,null];fRep()}});
+function fAlr(){const v=V.find(x=>x.id==me.vid),al=[];const d=topDis(v.id),s=d?risk(v.id,d):0;
+if(d&&s>=30){const x=dn(d);al.push(`<div class="alert"><b>${x}${cat(s)=='High'?t('hi_'):t('up')}</b><br><span class="pill r-${cat(s)}">${cat(s)} · ${s}</span><br><button class="btn" style="margin-top:8px" data-say="${T[lang].vr(vn(v),x)}">${t('hear')}</button></div>`)}
+if(fcRisk(v)>=50)al.push(`<div class="alert"><b>${t('wx')}</b><br>${T[lang].wxb(v.hum,v.t)}<br><button class="btn" style="margin-top:8px" data-say="${t('vw')}">${t('hear')}</button></div>`);
+$('#fAlr').innerHTML=`<h2>${vn(v)}${t('al')}</h2>`+(al.join('')||`<div class="card">${t('none')}</div>`);
+document.querySelectorAll('[data-say]').forEach(b=>b.onclick=()=>say(b.dataset.say))}
+function fPro(){const n=me.list.length,ver=me.list.filter(r=>r.st=='verified').length;
+const B=[['🌱',t('b')[0],n>=1],['🔎',t('b')[1],n>=10],['🛡️',t('b')[2],ver>=3]];
+$('#fPro').innerHTML=`<div class="card"><h2>${t('mypts')}: ${me.pts}</h2><p class="muted">${n} · ${ver} ${t('conf')}</p>${B.map(b=>`<span class="badge ${b[2]?'on':''}">${b[0]} ${b[1]}</span>`).join('')}</div>
+<div class="card"><h3>${t('top')} · ${V.find(v=>v.id==me.vid).n}</h3><p>1. u2 – 25<br>2. u3 – 20<br>3. ${lang=='en'?'You':'आप'} – ${me.pts}</p></div>`}
+function applyLang(){document.documentElement.lang=lang;const b=document.querySelectorAll('[data-f]');b[0].textContent=t('tr');b[1].textContent=t('ta');b[2].textContent=t('tp');$('#tF').textContent={hi:'किसान',en:'Farmer',mr:'शेतकरी'}[lang];fRep();fAlr();fPro()}
+$('#lang').onchange=e=>{lang=e.target.value;try{localStorage.setItem('pw_lang',lang)}catch(x){}applyLang()};
+document.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-f]').forEach(x=>x.className='btn alt');b.className='btn';['Rep','Alr','Pro'].forEach(k=>$('#f'+k).classList.add('hide'));$('#f'+b.dataset.f[0].toUpperCase()+b.dataset.f.slice(1)).classList.remove('hide');fAlr();fPro()});
+/* ---------- Officer ---------- */
+let sel=1;
+function oRender(){const d=$('#dis').value,fc=$('#fc').checked;
+const un=R.filter(r=>r.st=='pending').length,hv=V.filter(v=>risk(v.id,d)>=70).length;
+$('#stats').innerHTML=`<div class="stat"><b>${R.filter(r=>r.days<=1).length}</b>New reports today</div><div class="stat"><b>${hv}</b>High-risk villages</div><div class="stat"><b>${un}</b>Unverified cases</div>`;
+const H=hot(d);let s='<rect width="600" height="400" fill="var(--bg)" rx="8"/><path d="M0 200 Q150 160 300 210 T600 190" stroke="#6aa0c8" stroke-width="6" fill="none" opacity=".5"/>';
+V.forEach(v=>{const sc=fc?Math.min(100,fcRisk(v)):risk(v.id,d),k=cat(sc),n=R.filter(r=>r.vid==v.id&&r.days<=7&&(!d||eff(r)==d)).length;
+s+=`<g tabindex="0" role="button" aria-label="${v.n} ${k} risk" style="cursor:pointer" data-v="${v.id}"><circle cx="${v.x}" cy="${v.y}" r="52" fill="${k=='High'?'var(--r)':k=='Medium'?'var(--o)':'var(--g)'}" opacity="${fc?.55:.8}" stroke="${sel==v.id?'var(--ink)':'none'}" stroke-width="4"/><text x="${v.x}" y="${v.y-2}" text-anchor="middle" font-weight="800" fill="#fff" font-size="14">${v.n}</text><text x="${v.x}" y="${v.y+16}" text-anchor="middle" fill="#fff" font-size="12">${fc?'forecast ':''}${sc} · ${n} rpt</text></g>`});
+H.forEach(h=>s+=`<circle cx="${h.v.x}" cy="${h.v.y}" r="${64+h.n*4}" fill="none" stroke="var(--r)" stroke-width="3" stroke-dasharray="7 5"/>`);
+$('#map').innerHTML=s;
+$('#map').querySelectorAll('[data-v]').forEach(g=>{g.onclick=()=>{sel=+g.dataset.v;oRender()};g.onkeydown=e=>{if(e.key=='Enter'){sel=+g.dataset.v;oRender()}}});
+const v=V.find(x=>x.id==sel),rs=R.filter(r=>r.vid==sel&&r.st!='rejected').sort((a,b)=>a.days-b.days),ver=rs.filter(r=>r.st=='verified').length;
+const opts=Object.values(C).map(c=>c.d);
+$('#side').innerHTML=`<h2>${v.n} · ${v.h}</h2><p>Observed risk <span class="pill r-${cat(risk(v.id,d))}">${risk(v.id,d)}</span> Forecast <span class="pill r-${cat(fcRisk(v))}">${Math.min(100,fcRisk(v))}</span></p>
+<p class="muted">Weather: ${v.t}°C, ${v.hum}% humidity${v.rain?', rain in last 3 days':''}</p>
+${ver>=2?`<p><span class="pill" style="background:var(--r)">Confirmed outbreak</span><br><button class="btn" id="camp" style="margin-top:8px">📞 Launch Hindi voice campaign</button></p>`:`<p class="muted">${2-ver} more verification(s) to confirm outbreak.</p>`}
+${rs.length?rs.map(r=>`<div class="rep"><b>${CN[r.crop].en}</b> · ${r.days?r.days+'d ago':'today'} · ${r.uid=='me'?'<b>you (demo farmer)</b>':r.uid}<br>AI: ${r.dis} <span class="pill ${cc(r.conf)}">${r.conf}%</span> ${r.st=='verified'?'<span class="pill pH">verified: '+eff(r)+'</span>':''}
+${r.st=='pending'?`<br><button class="btn" style="padding:4px 10px" data-ok="${r.id}">Confirm</button> <select data-ch="${r.id}" style="width:auto;padding:4px"><option value="">Change label…</option>${opts.map(o=>`<option>${o}</option>`).join('')}</select> <button class="btn alt" style="padding:4px 10px" data-no="${r.id}">Not disease</button>`:''}</div>`).join(''):'<p class="muted">No reports yet. Submit one from the Farmer tab.</p>'}`;
+document.querySelectorAll('[data-ok]').forEach(b=>b.onclick=()=>verify(+b.dataset.ok));
+document.querySelectorAll('[data-ch]').forEach(b=>b.onchange=()=>b.value&&verify(+b.dataset.ch,b.value));
+document.querySelectorAll('[data-no]').forEach(b=>b.onclick=()=>{R.find(r=>r.id==+b.dataset.no).st='rejected';oRender()});
+const cp=$('#camp');if(cp)cp.onclick=()=>{toast('Campaign queued: '+(V.find(x=>x.id==sel).n)+' farmers');say(`${v.h} गाँव में रोग की पुष्टि हुई है। कृपया तुरंत रोकथाम के कदम उठाएँ।`)}}
+function verify(id,l){const r=R.find(x=>x.id==id);r.st='verified';if(l)r.label=l;if(r.uid=='me'){me.pts+=10;toast('Farmer earned +10 bonus points')}oRender();fPro();fAlr()}
+function setDis(){const o=['<option value="">All diseases</option>'].concat(Object.values(C).map(c=>`<option>${c.d}</option>`));$('#dis').innerHTML=o.join('')}
+setDis();$('#dis').onchange=oRender;$('#fc').onchange=oRender;
+$('#tF').onclick=()=>{$('#vF').classList.remove('hide');$('#vO').classList.add('hide');$('#tF').className='on';$('#tO').className=''};
+$('#tO').onclick=()=>{$('#vO').classList.remove('hide');$('#vF').classList.add('hide');$('#tO').className='on';$('#tF').className='';oRender()};
+$('#lang').value=lang;applyLang();
+</script></body></html>
